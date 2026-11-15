@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فروشگاه | فروشگاه من</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/app.js"></script><script src="js/data.js"></script>
+<script>renderHeader('shop'); renderFooter();</script>
+
+<section class="section"><div class="container">
+  <h2 class="section-title">فروشگاه</h2>
+  <p class="section-sub">۱۲ محصول در انتظار شماست</p>
+  <div class="shop-layout">
+    <aside class="sidebar">
+      <div class="filter-group"><h4>جستجو</h4>
+        <input class="search-input" id="searchBox" placeholder="نام محصول..."></div>
+      <div class="filter-group"><h4>دسته‌بندی</h4><div id="catFilters"></div></div>
+      <div class="filter-group"><h4>حداکثر قیمت</h4>
+        <input type="range" id="priceRange" min="400000" max="14000000" step="100000" value="14000000">
+        <div style="font-size:13px;color:var(--muted);margin-top:6px">تا <b id="priceLabel"></b> تومان</div></div>
+      <button class="btn btn-outline btn-block" onclick="resetFilters()">حذف فیلترها</button>
+    </aside>
+    <div>
+      <div class="toolbar">
+        <select class="select-input" id="sortSel">
+          <option value="pop">مرتب‌سازی: محبوب‌ترین</option>
+          <option value="cheap">ارزان‌ترین</option>
+          <option value="exp">گران‌ترین</option>
+          <option value="off">بیشترین تخفیف</option>
+        </select>
+      </div>
+      <div class="grid-products" id="shopGrid"></div>
+    </div>
+  </div>
+</div></section>
+
+<script>
+const params = new URLSearchParams(location.search);
+const state = { cats: params.get('cat') ? [params.get('cat')] : [], max: 14000000, q: '', sort: 'pop' };
+
+document.getElementById('catFilters').innerHTML =
+  `<label class="check"><input type="checkbox" class="catCheck" value="all" ${state.cats.length?'':'checked'}> همه دسته‌ها</label>` +
+  CATEGORIES.map(c => `<label class="check"><input type="checkbox" class="catCheck" value="${c.name}" ${state.cats.includes(c.name)?'checked':''}> ${c.icon} ${c.name}</label>`).join('');
+
+const priceRange = document.getElementById('priceRange');
+priceRange.addEventListener('input', () => {
+  state.max = +priceRange.value;
+  document.getElementById('priceLabel').textContent = fmt(state.max);
+  render();
+});
+document.getElementById('priceLabel').textContent = fmt(state.max);
+document.getElementById('searchBox').addEventListener('input', e => { state.q = e.target.value; render(); });
+document.getElementById('sortSel').addEventListener('change', e => { state.sort = e.target.value; render(); });
+document.querySelectorAll('.catCheck').forEach(cb => cb.addEventListener('change', () => {
+  const all = document.querySelector('.catCheck[value=all]');
+  if(cb.value === 'all' && cb.checked){ state.cats = []; document.querySelectorAll('.catCheck:not([value=all])').forEach(x=>x.checked=false); }
+  else { all.checked = false; state.cats = [...document.querySelectorAll('.catCheck:checked:not([value=all])')].map(x=>x.value); }
+  render();
+}));
+function resetFilters(){
+  state.cats = []; state.max = 14000000; state.q = ''; state.sort = 'pop';
+  priceRange.value = 14000000;
+  document.getElementById('priceLabel').textContent = fmt(14000000);
+  document.getElementById('searchBox').value = ''; document.getElementById('sortSel').value = 'pop';
+  document.querySelector('.catCheck[value=all]').checked = true;
+  document.querySelectorAll('.catCheck:not([value=all])').forEach(x=>x.checked=false);
+  render();
+}
+function render(){
+  let list = PRODUCTS.filter(p =>
+    (state.cats.length === 0 || state.cats.includes(p.cat)) &&
+    p.price <= state.max &&
+    p.name.includes(state.q));
+  const sorters = { pop:(a,b)=>b.rating-a.rating, cheap:(a,b)=>a.price-b.price, exp:(a,b)=>b.price-a.price, off:(a,b)=>off(b)-off(a) };
+  list.sort(sorters[state.sort]);
+  document.getElementById('shopGrid').innerHTML = list.length
+    ? list.map(productCard).join('')
+    : '<div class="empty">😕 محصولی با این فیلترها پیدا نشد</div>';
+}
+render();
+</script>
+</body></html>

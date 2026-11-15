@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل مدیریت | فروشگاه من</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+<script src="js/app.js"></script><script src="js/data.js"></script>
+
+<!-- ======== صفحه ورود ======== -->
+<div class="admin-login" id="loginScreen">
+  <div class="login-card">
+    <div class="lock">🔐</div>
+    <h1>پنل مدیریت فروشگاه</h1>
+    <p>برای دسترسی، رمز عبور را وارد کنید<br><small style="color:#a5a0b8">(رمز پیش‌فرض: admin123)</small></p>
+    <form onsubmit="event.preventDefault(); doLogin();">
+      <div class="form-group"><input type="password" id="loginPass" placeholder="رمز عبور" required style="text-align:center"></div>
+      <button class="btn btn-block">ورود به پنل</button>
+    </form>
+    <div id="loginErr" style="color:#dc2626;font-size:13px;margin-top:10px;display:none">❌ رمز عبور اشتباه است</div>
+    <a href="index.html" style="display:block;margin-top:18px;font-size:13px;color:var(--muted)">← بازگشت به فروشگاه</a>
+  </div>
+</div>
+
+<!-- ======== بدنه پنل ======== -->
+<div class="admin-shell" id="adminShell">
+  <aside class="admin-side">
+    <div class="a-logo">🛍️ فروشگاه من</div>
+    <button class="side-btn active" data-tab="dashboard" onclick="switchTab('dashboard')"><span class="ic">📊</span> داشبورد</button>
+    <button class="side-btn" data-tab="products" onclick="switchTab('products')"><span class="ic">📦</span> محصولات</button>
+    <button class="side-btn" data-tab="orders" onclick="switchTab('orders')"><span class="ic">🧾</span> سفارش‌ها <span class="cart-count" id="pendingBadge" style="display:none;background:#ef4444"></span></button>
+    <button class="side-btn" data-tab="settings" onclick="switchTab('settings')"><span class="ic">⚙️</span> تنظیمات</button>
+    <div class="side-foot">
+      <a href="index.html" class="side-btn" style="display:flex"><span class="ic">🏬</span> مشاهده فروشگاه</a>
+      <button class="side-btn" onclick="logout()"><span class="ic">🚪</span> خروج</button>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <!-- داشبورد -->
+    <div class="atabs active" id="tab-dashboard">
+      <div class="admin-top"><div><h2>📊 داشبورد</h2><small id="todayLabel"></small></div>
+        <button class="btn" onclick="switchTab('products'); openProductModal()">＋ افزودن محصول</button></div>
+      <div class="stat-grid" id="statGrid"></div>
+      <div class="two-col">
+        <div class="panel"><h3 style="margin-bottom:18px">🧾 آخرین سفارش‌ها</h3><div id="recentOrders"></div></div>
+        <div class="panel"><h3 style="margin-bottom:18px">📁 توزیع محصولات بر اساس دسته</h3><div class="chart" id="catChart"></div></div>
+      </div>
+    </div>
+
+    <!-- محصولات -->
+    <div class="atabs" id="tab-products">
+      <div class="admin-top"><div><h2>📦 مدیریت محصولات</h2><small id="prodCountLabel"></small></div></div>
+      <div class="a-toolbar">
+        <input class="search-input" id="prodSearch" placeholder="🔍 جستجوی محصول..." oninput="renderProductsTable()">
+        <button class="btn" onclick="openProductModal()">＋ محصول جدید</button>
+      </div>
+      <div class="panel-scroll"><table class="a-table">
+        <thead><tr><th>محصول</th><th>دسته‌بندی</th><th>قیمت</th><th>تخفیف</th><th>موجودی</th><th>عملیات</th></tr></thead>
+        <tbody id="prodTbody"></tbody></table></div>
+    </div>
+
+    <!-- سفارش‌ها -->
+    <div class="atabs" id="tab-orders">
+      <div class="admin-top"><div><h2>🧾 مدیریت سفارش‌ها</h2><small id="orderCountLabel"></small></div>
+        <select class="status-sel" id="orderFilter" onchange="renderOrders()">
+          <option value="all">همه سفارش‌ها</option>
+          <option value="pending">در انتظار</option>
+          <option value="shipped">ارسال شده</option>
+          <option value="delivered">تحویل شده</option>
+        </select></div>
+      <div id="ordersList"></div>
+    </div>
+
+    <!-- تنظیمات -->
+    <div class="atabs" id="tab-settings">
+      <div class="admin-top"><div><h2>⚙️ تنظیمات فروشگاه</h2><small>این تنظیمات بلافاصله روی سایت اعمال می‌شود</small></div></div>
+      <div class="two-col">
+        <div class="panel"><h3>🚚 هزینه ارسال</h3>
+          <form onsubmit="event.preventDefault(); saveSettings();">
+            <div class="form-group"><label>هزینه ارسال (تومان)</label><input type="number" id="setShip" min="0" required></div>
+            <div class="form-group"><label>حداقل خرید برای ارسال رایگان (تومان)</label><input type="number" id="setFree" min="0" required></div>
+            <button class="btn">💾 ذخیره تنظیمات</button></form></div>
+        <div class="panel"><h3>🔑 تغییر رمز عبور پنل</h3>
+          <form onsubmit="event.preventDefault(); changePass();">
+            <div class="form-group"><label>رمز عبور جدید</label><input type="password" id="newPass" minlength="4" required placeholder="حداقل ۴ کاراکتر"></div>
+            <button class="btn">🔑 تغییر رمز</button></form>
+          <hr style="border:none;border-top:1px dashed #eee;margin:22px 0">
+          <h3 style="color:#dc2626">⚠️ بازنشانی کامل</h3>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px">حذف محصولات ویرایش‌شده، سفارش‌ها و تنظیمات؛ بازگشت به حالت اولیه</p>
+          <button class="btn" style="background:#dc2626" onclick="factoryReset()">🗑️ بازنشانی کارخانه</button></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ======== مودال افزودن/ویرایش محصول ======== -->
+<div class="modal-back" id="pModal">
+  <div class="modal">
+    <h3 id="modalTitle">＋ محصول جدید</h3>
+    <form onsubmit="event.preventDefault(); saveProduct();">
+      <input type="hidden" id="fId">
+      <div class="frow">
+        <div class="form-group full"><label>نام محصول *</label><input id="fName" required></div>
+        <div class="form-group"><label>دسته‌بندی *</label><select id="fCat" class="select-input" style="width:100%"></select></div>
+        <div class="form-group"><label>موجودی *</label><input type="number" id="fStock" min="0" required></div>
+        <div class="form-group"><label>قیمت (تومان) *</label><input type="number" id="fPrice" min="1000" required></div>
+        <div class="form-group"><label>قیمت قبل از تخفیف (اختیاری)</label><input type="number" id="fOld" min="0" placeholder="0 = بدون تخفیف"></div>
+        <div class="form-group full"><label>امتیاز</label><select id="fRating" class="select-input" style="width:100%"><option value="5">★★★★★</option><option value="4">★★★★☆</option><option value="3">★★★☆☆</option></select></div>
+        <div class="form-group full"><label>ایموجی محصول</label><div class="emoji-pick" id="emojiPick"></div></div>
+        <div class="form-group full"><label>رنگ پس‌زمینه</label><div class="grad-pick" id="gradPick"></div></div>
+        <div class="form-group full"><label>توضیحات</label><textarea id="fDesc" rows="3" placeholder="توضیح کوتاه محصول..."></textarea></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px">
+        <button class="btn" style="flex:1">💾 ذخیره محصول</button>
+        <button type="button" class="btn btn-outline" onclick="closeModal()">انصراف</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+/* ---------- احراز هویت ---------- */
+const PASS_KEY = 'faroshop_admin_pass';
+const getPass = () => localStorage.getItem(PASS_KEY) || 'admin123';
+function doLogin(){
+  if(document.getElementById('loginPass').value === getPass()){
+    sessionStorage.setItem('faroshop_admin','1');
+    showPanel();
+  } else document.getElementById('loginErr').style.display = 'block';
+}
+function logout(){ sessionStorage.removeItem('faroshop_admin'); location.reload(); }
+function showPanel(){
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('adminShell').style.display = 'block';
+  renderDashboard(); renderProductsTable(); renderOrders(); loadSettings();
+}
+if(sessionStorage.getItem('faroshop_admin')) showPanel();
+
+/* ---------- داده‌ها ---------- */
+const getOrders = () => JSON.parse(localStorage.getItem('faroshop_orders') || '[]');
+const saveOrders = o => localStorage.setItem('faroshop_orders', JSON.stringify(o));
+const getSettings = () => JSON.parse(localStorage.getItem('faroshop_settings') || '{"ship":85000,"free":2000000}');
+const faDate = d => new Intl.DateTimeFormat('fa-IR',{dateStyle:'medium',timeStyle:'short'}).format(new Date(d));
+const STATUS = {pending:['در انتظار','tag-amber'], shipped:['ارسال شده','tag-blue'], delivered:['تحویل شده','tag-green']};
+
+function switchTab(t){
+  document.querySelectorAll('.atabs').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.side-btn[data-tab]').forEach(x => x.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  document.querySelector(`.side-btn[data-tab=${t}]`).classList.add('active');
+  if(t==='dashboard') renderDashboard();
+  if(t==='products') renderProductsTable();
+  if(t==='orders') renderOrders();
+  if(t==='settings') loadSettings();
+}
+
+/* ---------- داشبورد ---------- */
+function renderDashboard(){
+  const orders = getOrders();
+  const revenue = orders.reduce((s,o)=>s+o.total,0);
+  const pending = orders.filter(o=>o.status==='pending').length;
+  document.getElementById('todayLabel').textContent = faDate(new Date());
+  document.getElementById('statGrid').innerHTML = `
+    <div class="stat-card"><span class="sic" style="background:#ede9fe">📦</span><div><b>${fmt(PRODUCTS.length)}</b><small>محصول فعال</small></div></div>
+    <div class="stat-card"><span class="sic" style="background:#dbeafe">🧾</span><div><b>${fmt(orders.length)}</b><small>کل سفارش‌ها</small></div></div>
+    <div class="stat-card"><span class="sic" style="background:#dcfce7">💰</span><div><b>${fmt(revenue)}</b><small>تومان درآمد</small></div></div>
+    <div class="stat-card"><span class="sic" style="background:#fef3c7">⏳</span><div><b>${fmt(pending)}</b><small>سفارش در انتظار</small></div></div>`;
+  const badge = document.getElementById('pendingBadge');
+  badge.textContent = pending; badge.style.display = pending ? 'flex' : 'none';
+  // آخرین سفارش‌ها
+  document.getElementById('recentOrders').innerHTML = orders.length ? [...orders].reverse().slice(0,5).map(o => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px dashed #f0f0f0;font-size:14px">
+      <div><b>${o.code}</b><br><small style="color:var(--muted)">${faDate(o.date)}</small></div>
+      <div style="text-align:left"><div style="font-weight:700">${fmt(o.total)} تومان</div><span class="tag ${STATUS[o.status][1]}">${STATUS[o.status][0]}</span></div>
+    </div>`).join('') : '<div class="empty-box"><div class="big">🧾</div>هنوز سفارشی ثبت نشده</div>';
+  // نمودار دسته‌ها
+  const maxCount = Math.max(...CATEGORIES.map(c=>c.count),1);
+  document.getElementById('catChart').innerHTML = CATEGORIES.map(c => `
+    <div class="bar-row"><span style="white-space:nowrap;overflow:hidden">${c.icon} ${c.name}</span>
+      <div class="bar-track"><div class="bar-fill" style="width:${c.count/maxCount*100}%"></div></div>
+      <b>${fmt(c.count)}</b></div>`).join('');
+}
+
+/* ---------- محصولات ---------- */
+const GRADS = [...new Set(PRODUCTS.map(p=>p.grad))];
+const EMOJIS = [...new Set(PRODUCTS.map(p=>p.emoji))].concat(['🖥️','🎮','🕶️','🧸','📱','🎁','🖊️','🍫']).slice(0,16);
+let selEmoji = '🎁', selGrad = GRADS[0];
+
+function renderProductsTable(){
+  const q = document.getElementById('prodSearch').value || '';
+  const list = PRODUCTS.filter(p => p.name.includes(q));
+  document.getElementById('prodCountLabel').textContent = `${fmt(list.length)} محصول`;
+  document.getElementById('prodTbody').innerHTML = list.map(p => `
+    <tr><td><div class="pcell"><div class="pemoji" style="background:${p.grad}">${p.emoji}</div>
+        <div><b>${p.name}</b><br><small style="color:var(--muted)">${p.desc.slice(0,38)}...</small></div></div></td>
+      <td><span class="tag tag-gray">${p.cat}</span></td>
+      <td style="font-weight:700;white-space:nowrap">${fmt(p.price)} <small style="color:var(--muted)">تومان</small></td>
+      <td>${p.old ? `<span class="tag tag-green">٪${off(p)}</span>` : '<span style="color:#c4c4c4">—</span>'}</td>
+      <td>${p.stock > 0 ? `<span class="tag tag-blue">${fmt(p.stock)} عدد</span>` : '<span class="tag tag-red">ناموجود</span>'}</td>
+      <td style="white-space:nowrap">
+        <button class="mini-btn" title="ویرایش" onclick="openProductModal(${p.id})">✏️</button>
+        <button class="mini-btn danger" title="حذف" onclick="deleteProduct(${p.id})">🗑️</button></td></tr>`).join('')
+    || '<tr><td colspan="6" class="empty-box">محصولی یافت نشد</td></tr>';
+}
+function openProductModal(id){
+  selEmoji = EMOJIS[0]; selGrad = GRADS[0];
+  document.getElementById('emojiPick').innerHTML = EMOJIS.map(e =>
+    `<button type="button" class="${e===selEmoji?'sel':''}" onclick="pickEmoji(this,'${e}')">${e}</button>`).join('');
+  document.getElementById('gradPick').innerHTML = GRADS.map(g =>
+    `<button type="button" class="${g===selGrad?'sel':''}" style="background:${g}" onclick="pickGrad(this,'${g}')" title=""></button>`).join('');
+  const p = id ? PRODUCTS.find(x=>x.id===id) : null;
+  document.getElementById('modalTitle').textContent = p ? '✏️ ویرایش: ' + p.name : '＋ محصول جدید';
+  document.getElementById('fId').value = p ? p.id : '';
+  document.getElementById('fName').value = p ? p.name : '';
+  document.getElementById('fCat').innerHTML = CATEGORIES.map(c => `<option ${p && p.cat===c.name?'selected':''}>${c.name}</option>`).join('');
+  document.getElementById('fPrice').value = p ? p.price : '';
+  document.getElementById('fOld').value = p && p.old ? p.old : '';
+  document.getElementById('fStock').value = p ? p.stock : 10;
+  document.getElementById('fRating').value = p ? p.rating : 5;
+  document.getElementById('fDesc').value = p ? p.desc : '';
+  if(p){ selEmoji = p.emoji; selGrad = p.grad;
+    document.querySelectorAll('#emojiPick button').forEach(b => b.classList.toggle('sel', b.textContent === p.emoji));
+    document.querySelectorAll('#gradPick button').forEach(b => b.classList.toggle('sel', b.style.background.includes(p.grad.split(',')[0].split('(')[1]))); }
+  document.getElementById('pModal').classList.add('open');
+}
+function pickEmoji(btn, e){ selEmoji = e; document.querySelectorAll('#emojiPick button').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+function pickGrad(btn, g){ selGrad = g; document.querySelectorAll('#gradPick button').forEach(b=>b.classList.remove('sel')); btn.classList.add('sel'); }
+function closeModal(){ document.getElementById('pModal').classList.remove('open'); }
+function saveProduct(){
+  const id = +document.getElementById('fId').value;
+  const price = +document.getElementById('fPrice').value;
+  const old = +document.getElementById('fOld').value || null;
+  const data = {
+    name: document.getElementById('fName').value.trim(),
+    cat: document.getElementById('fCat').value,
+    price, old: old && old > price ? old : null,
+    stock: +document.getElementById('fStock').value,
+    rating: +document.getElementById('fRating').value,
+    desc: document.getElementById('fDesc').value.trim() || 'توضیحاتی برای این محصول ثبت نشده است.',
+    emoji: selEmoji, grad: selGrad
+  };
+  if(id){ Object.assign(PRODUCTS.find(x=>x.id===id), data); }
+  else { data.id = Math.max(0,...PRODUCTS.map(p=>p.id)) + 1; PRODUCTS.push(data); }
+  saveProducts(); closeModal(); renderProductsTable(); renderDashboard();
+  toast(id ? '✏️ محصول ویرایش شد' : '✅ محصول جدید اضافه شد');
+}
+function deleteProduct(id){
+  if(!confirm('آیا از حذف این محصول مطمئن هستید؟')) return;
+  PRODUCTS.splice(PRODUCTS.findIndex(x=>x.id===id), 1);
+  saveProducts(); renderProductsTable(); renderDashboard(); toast('🗑️ محصول حذف شد');
+}
+
+/* ---------- سفارش‌ها ---------- */
+function renderOrders(){
+  const filter = document.getElementById('orderFilter').value;
+  const orders = [...getOrders()].reverse().filter(o => filter==='all' || o.status===filter);
+  document.getElementById('orderCountLabel').textContent = `${fmt(orders.length)} سفارش`;
+  document.getElementById('ordersList').innerHTML = orders.length ? orders.map((o,i) => `
+    <div class="order-card">
+      <div class="order-head"><div><b>🧾 سفارش ${o.code}</b><small>${faDate(o.date)}</small></div>
+        <span class="tag ${STATUS[o.status][1]}">${STATUS[o.status][0]}</span></div>
+      <div class="order-items">${o.items.map(it => `<span>${it.emoji || '📦'} ${it.name} × ${fmt(it.qty)}</span>`).join('')}</div>
+      <div class="order-foot"><div class="total">مبلغ: ${fmt(o.total)} تومان</div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="status-sel" onchange="setStatus('${o.code}', this.value)">
+            <option value="pending" ${o.status==='pending'?'selected':''}>در انتظار</option>
+            <option value="shipped" ${o.status==='shipped'?'selected':''}>ارسال شده</option>
+            <option value="delivered" ${o.status==='delivered'?'selected':''}>تحویل شده</option>
+          </select>
+          <button class="mini-btn danger" title="حذف سفارش" onclick="deleteOrder('${o.code}')">🗑️</button>
+        </div></div>
+    </div>`).join('') : '<div class="panel empty-box"><div class="big">🧾</div>سفارشی یافت نشد</div>';
+}
+function setStatus(code, status){
+  const orders = getOrders(); orders.find(o=>o.code===code).status = status;
+  saveOrders(orders); renderOrders(); renderDashboard(); toast('🔄 وضعیت سفارش به‌روز شد');
+}
+function deleteOrder(code){
+  if(!confirm('حذف این سفارش؟')) return;
+  saveOrders(getOrders().filter(o=>o.code!==code)); renderOrders(); renderDashboard(); toast('🗑️ سفارش حذف شد');
+}
+
+/* ---------- تنظیمات ---------- */
+function loadSettings(){
+  const s = getSettings();
+  document.getElementById('setShip').value = s.ship;
+  document.getElementById('setFree').value = s.free;
+}
+function saveSettings(){
+  localStorage.setItem('faroshop_settings', JSON.stringify({
+    ship: +document.getElementById('setShip').value,
+    free: +document.getElementById('setFree').value }));
+  toast('💾 تنظیمات ذخیره شد');
+}
+function changePass(){
+  const p = document.getElementById('newPass').value;
+  if(p.length < 4) return toast('⚠️ رمز باید حداقل ۴ کاراکتر باشد');
+  localStorage.setItem(PASS_KEY, p);
+  document.getElementById('newPass').value = '';
+  toast('🔑 رمز عبور تغییر کرد');
+}
+function factoryReset(){
+  if(!confirm('همه داده‌ها (محصولات، سفارش‌ها، تنظیمات) بازنشانی شود؟')) return;
+  ['faroshop_products','faroshop_orders','faroshop_settings','faroshop_admin_pass'].forEach(k => localStorage.removeItem(k));
+  location.reload();
+}
+</script>
+</body></html>

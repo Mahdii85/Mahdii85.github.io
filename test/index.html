@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>فروشگاه من | خرید آنلاین</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/app.js"></script><script src="js/data.js"></script>
+<script>renderHeader('home');</script>
+
+<!-- هیرو -->
+<section class="hero"><div class="container hero-inner">
+  <div>
+    <span class="badge">🎉 جشنواره پاییزی تا ٪۴۰ تخفیف</span>
+    <h1>هرچی لازم داری،<br>اینجا پیداش می‌کنی</h1>
+    <p>جشنواره بزرگ فروش با ضمانت اصالت کالا، ارسال سریع و ۷ روز مهلت بازگشت. همین حالا خریدت رو شروع کن!</p>
+    <a href="shop.html" class="btn">🛒 شروع خرید</a>
+    <a href="#features" class="btn btn-outline" style="margin-right:10px">چرا ما؟</a>
+    <div class="hero-stats">
+      <div><b>+۱۲٬۰۰۰</b><small>محصول متنوع</small></div>
+      <div><b>+۵۰٬۰۰۰</b><small>مشتری راضی</small></div>
+      <div><b>۲۴/۷</b><small>پشتیبانی</small></div>
+    </div>
+  </div>
+  <div class="hero-emoji">🛍️</div>
+</div></section>
+
+<!-- دسته‌بندی‌ها -->
+<section class="section" id="cats"><div class="container">
+  <h2 class="section-title">دسته‌بندی‌های محبوب</h2>
+  <p class="section-sub">خرید بر اساس علاقه‌مندی‌هایتان</p>
+  <div class="grid-cats" id="catsGrid"></div>
+</div></section>
+
+<!-- محصولات ویژه -->
+<section class="section" style="padding-top:0"><div class="container">
+  <h2 class="section-title">پیشنهاد شگفت‌انگیز</h2>
+  <p class="section-sub">تخفیف‌دارترین محصولات این هفته</p>
+  <div class="grid-products" id="featGrid"></div>
+  <div style="text-align:center;margin-top:36px"><a href="shop.html" class="btn btn-outline">مشاهده همه محصولات ←</a></div>
+</div></section>
+
+<!-- مزایا -->
+<section class="section" id="features" style="background:#fff"><div class="container">
+  <h2 class="section-title">چرا فروشگاه من؟</h2>
+  <p class="section-sub">تجربه‌ای متفاوت از خرید آنلاین</p>
+  <div class="features">
+    <div class="feature"><span class="ic">🚚</span><div><b>ارسال سریع</b><small>به سراسر کشور در ۲۴ تا ۷۲ ساعت</small></div></div>
+    <div class="feature"><span class="ic">✅</span><div><b>ضمانت اصالت</b><small>۱۰۰٪ کالای اورجینال و تضمینی</small></div></div>
+    <div class="feature"><span class="ic">↩️</span><div><b>۷ روز بازگشت</b><small>بدون قید و شرط، خیالت راحت</small></div></div>
+    <div class="feature"><span class="ic">💳</span><div><b>پرداخت امن</b><small>درگاه بانکی معتبر و مطمئن</small></div></div>
+  </div>
+</div></section>
+
+<script>
+renderFooter();
+document.getElementById('catsGrid').innerHTML = CATEGORIES.map(c =>
+  `<div class="cat-card" onclick="location.href='shop.html?cat=${encodeURIComponent(c.name)}'">
+     <div class="icon">${c.icon}</div><h3>${c.name}</h3><small>${c.count} محصول</small></div>`).join('');
+document.getElementById('featGrid').innerHTML = PRODUCTS.filter(p => p.old)
+  .sort((a,b) => off(b) - off(a)).slice(0,4).map(productCard).join('');
+</script>
+</body></html>

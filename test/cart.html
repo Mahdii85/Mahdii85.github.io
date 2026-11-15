@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>سبد خرید | فروشگاه من</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/app.js"></script><script src="js/data.js"></script>
+<script>renderHeader('cart'); renderFooter();</script>
+
+<section class="section"><div class="container">
+  <h2 class="section-title">🛒 سبد خرید شما</h2>
+  <p class="section-sub">مرور سفارش و تکمیل خرید</p>
+  <div id="cartWrap"></div>
+</div></section>
+
+<script>
+const SET = JSON.parse(localStorage.getItem('faroshop_settings') || '{"ship":85000,"free":2000000}');
+const SHIP_FREE = SET.free, SHIP = SET.ship;
+function renderCart(){
+  const cart = getCart();
+  const wrap = document.getElementById('cartWrap');
+  if(!cart.length){
+    wrap.innerHTML = `<div class="panel" style="text-align:center;padding:60px">
+      <div style="font-size:56px">🛒</div><h3 style="margin:14px 0">سبد خرید شما خالی است</h3>
+      <p style="color:var(--muted);margin-bottom:22px">هنوز محصولی انتخاب نکرده‌اید</p>
+      <a href="shop.html" class="btn">مشاهده محصولات</a></div>`;
+    return;
+  }
+  let subtotal = 0;
+  const rows = cart.map(i => {
+    const p = PRODUCTS.find(x => x.id === i.id);
+    subtotal += p.price * i.qty;
+    return `<tr>
+      <td><div style="display:flex;align-items:center;gap:14px">
+        <div style="width:64px;height:64px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:30px;background:${p.grad}">${p.emoji}</div>
+        <div><a href="product.html?id=${p.id}" style="font-weight:600">${p.name}</a><br><small style="color:var(--muted)">${p.cat}</small></div></div></td>
+      <td><div class="qty" style="margin:0">
+        <button onclick="setQty(${p.id}, ${i.qty+1}); renderCart()">＋</button>
+        <span>${fmt(i.qty)}</span>
+        <button onclick="setQty(${p.id}, ${i.qty-1}); renderCart()">－</button></div></td>
+      <td style="font-weight:700">${fmt(p.price * i.qty)} <small style="color:var(--muted)">تومان</small></td>
+      <td><button class="remove-btn" title="حذف" onclick="setQty(${p.id}, 0); renderCart()">🗑️</button></td></tr>`;
+  }).join('');
+  const ship = subtotal >= SHIP_FREE ? 0 : SHIP;
+  wrap.innerHTML = `<div class="cart-layout">
+    <div class="panel"><table class="cart-table">
+      <thead><tr><th>محصول</th><th>تعداد</th><th>قیمت</th><th></th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <div>
+      <div class="panel" style="margin-bottom:22px"><h3>خلاصه سفارش</h3>
+        <div class="sum-row"><span>قیمت کالاها (${fmt(cartCount())})</span><span>${fmt(subtotal)} تومان</span></div>
+        <div class="sum-row"><span>هزینه ارسال</span><span>${ship === 0 ? 'رایگان 🎉' : fmt(ship) + ' تومان'}</span></div>
+        ${ship > 0 ? `<div style="font-size:12px;color:var(--accent)">با ${fmt(SHIP_FREE - subtotal)} تومان خرید بیشتر، ارسال رایگان می‌شود</div>` : ''}
+        <div class="sum-row total"><span>مبلغ نهایی</span><span>${fmt(subtotal + ship)} تومان</span></div></div>
+      <div class="panel"><h3>📋 اطلاعات ارسال</h3>
+        <form onsubmit="event.preventDefault(); submitOrder();">
+          <div class="form-group"><label>نام و نام خانوادگی *</label><input required placeholder="مثلاً: علی رضایی"></div>
+          <div class="form-group"><label>شماره موبایل *</label><input required pattern="09[0-9]{9}" placeholder="09xxxxxxxxx"></div>
+          <div class="form-group"><label>آدرس کامل *</label><textarea rows="3" required placeholder="استان، شهر، خیابان، پلاک..."></textarea></div>
+          <button class="btn btn-block">💳 پرداخت و ثبت سفارش</button></form></div>
+    </div></div>`;
+}
+function submitOrder(){
+  const code = 'FM-' + Math.floor(1000 + Math.random()*9000);
+  const orders = JSON.parse(localStorage.getItem('faroshop_orders') || '[]');
+  let sub = 0; const items = getCart().map(i => {
+    const p = PRODUCTS.find(x => x.id === i.id); sub += p.price * i.qty;
+    return {id: p.id, name: p.name, emoji: p.emoji, qty: i.qty, price: p.price};
+  });
+  const ship = sub >= SHIP_FREE ? 0 : SHIP;
+  orders.push({code, date: new Date().toISOString(), status: 'pending', items, total: sub + ship});
+  localStorage.setItem('faroshop_orders', JSON.stringify(orders));
+  localStorage.removeItem(CART_KEY); updateBadge();
+  document.getElementById('cartWrap').innerHTML = `<div class="panel" style="text-align:center;padding:60px">
+    <div style="font-size:64px">🎉</div><h2 style="margin:14px 0">سفارش شما با موفقیت ثبت شد!</h2>
+    <p style="color:var(--muted);margin-bottom:8px">کد پیگیری سفارش: <b style="color:var(--primary)">${code}</b></p>
+    <p style="color:var(--muted);margin-bottom:26px">جزئیات سفارش برایتان پیامک می‌شود</p>
+    <a href="shop.html" class="btn">ادامه خرید</a></div>`;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+renderCart();
+</script>
+</body></html>

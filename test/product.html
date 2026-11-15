@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>جزئیات محصول | فروشگاه من</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<script src="js/app.js"></script><script src="js/data.js"></script>
+<script>renderHeader('shop'); renderFooter();</script>
+
+<section class="section"><div class="container">
+  <div class="pdp" id="pdp"></div>
+  <h2 class="section-title" style="margin-top:70px">محصولات مرتبط</h2>
+  <p class="section-sub">شاید این‌ها هم بپسندید</p>
+  <div class="grid-products" id="relatedGrid"></div>
+</div></section>
+
+<script>
+const id = +new URLSearchParams(location.search).get('id') || 1;
+const p = PRODUCTS.find(x => x.id === id) || PRODUCTS[0];
+let qty = 1;
+document.getElementById('pdp').innerHTML = `
+  <div class="gallery" style="background:${p.grad}">${p.emoji}</div>
+  <div>
+    <span class="badge">${p.cat}</span>
+    <h1>${p.name}</h1>
+    <div class="stars" style="font-size:17px">${stars(p.rating)}</div>
+    <p class="desc" style="margin-top:14px">${p.desc}</p>
+    ${p.old ? `<span class="badge" style="background:#fee2e2;color:#dc2626">٪${off(p)} تخفیف ویژه</span>` : ''}
+    <div class="big-price">${fmt(p.price)} <small style="font-size:15px;color:var(--muted)">تومان</small></div>
+    ${p.old ? `<div class="old-price" style="font-size:15px">${fmt(p.old)} تومان</div>` : ''}
+    <div class="qty">
+      <span>تعداد:</span>
+      <button onclick="changeQty(1)">＋</button><span id="qtyNum">۱</span><button onclick="changeQty(-1)">－</button>
+    </div>
+    <button class="btn" style="width:100%;max-width:340px" onclick="addToCart(${p.id}, qty); this.textContent='✓ به سبد اضافه شد'">🛒 افزودن به سبد خرید</button>
+    <ul class="meta">
+      <li>موجودی انبار <b>${p.stock > 0 ? '✅ موجود (' + fmt(p.stock) + ' عدد)' : '❌ ناموجود'}</b></li>
+      <li>ارسال <b>رایگان برای خرید بالای ۲ میلیون تومان</b></li>
+      <li>گارانتی <b>۱۸ ماهه معتبر</b></li>
+      <li>مهلت بازگشت <b>۷ روز بدون قید و شرط</b></li>
+    </ul>
+  </div>`;
+function changeQty(d){ qty = Math.min(Math.max(1, qty + d), p.stock); document.getElementById('qtyNum').textContent = fmt(qty); }
+document.getElementById('relatedGrid').innerHTML = PRODUCTS.filter(x => x.cat === p.cat && x.id !== p.id).slice(0,4).map(productCard).join('');
+document.title = p.name + ' | فروشگاه من';
+</script>
+</body></html>
